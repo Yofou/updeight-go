@@ -17,6 +17,12 @@ router.post('/login', [SessionController, 'create'])
 router.post('/register', [SessionController, 'register'])
 router.delete('/logout', [SessionController, 'delete']).use(middleware.auth({ guards: ['web'] }))
 
-router.get('/orgs/all', [OrgsController, 'readAll']).use(middleware.auth({ guards: ['web'] }))
-router.post('/orgs', [OrgsController, 'create']).use(middleware.auth({ guards: ['web'] }))
-router.get('/orgs/:id', [OrgsController, 'read']).use(middleware.auth({ guards: ['web'] }))
+router
+  .group(() => {
+    router.get('/orgs/all', [OrgsController, 'readAll'])
+    router.post('/orgs', [OrgsController, 'create'])
+    router.get('/orgs/:id', [OrgsController, 'read'])
+    router.put('/orgs/:id', [OrgsController, 'update'])
+    router.delete('/orgs/:id', [OrgsController, 'delete'])
+  })
+  .use(middleware.auth({ guards: ['web'] }))

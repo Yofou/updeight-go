@@ -18,3 +18,13 @@ const readOrgSchema = vine.object({
 })
 
 export const readOrgValidator = vine.compile(readOrgSchema)
+
+const updateOrgSchema = vine.object({
+  name: vine.string().unique(async (_, value) => {
+    return !(await Org.findBy({
+      name: value,
+    }))
+  }),
+})
+
+export const updateOrgValidator = vine.compile(updateOrgSchema)

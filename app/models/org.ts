@@ -1,7 +1,8 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, hasOne } from '@adonisjs/lucid/orm'
-import { type HasOne } from '@adonisjs/lucid/types/relations'
+import { BaseModel, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import { type HasMany, type HasOne } from '@adonisjs/lucid/types/relations'
 import User from './user.js'
+import Client from './client.js'
 
 export default class Org extends BaseModel {
   @column({ isPrimary: true })
@@ -15,8 +16,12 @@ export default class Org extends BaseModel {
 
   @hasOne(() => User, {
     localKey: 'ownerId',
+    foreignKey: 'id',
   })
   declare owner: HasOne<typeof User>
+
+  @hasMany(() => Client)
+  declare clients: HasMany<typeof Client>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -24,4 +29,3 @@ export default class Org extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 }
-

@@ -1,7 +1,11 @@
+import { UserFactory } from '#database/factories/user_factory'
 import User from '#models/user'
+import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 
-test.group('Session, /login', () => {
+test.group('Session, /login', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
   test('fails if password doesnt match', async ({ client }) => {
     const response = await client
       .post('/login')
@@ -39,27 +43,24 @@ test.group('Session, /login', () => {
   })
 
   test('passes if credentials match and ', async ({ client, assert }) => {
+    const user = await UserFactory.merge({ password: 'password123' }).create()
     const response = await client
       .post('/login')
       .json({
-        email: 'reach@yofou.dev',
+        email: user.email,
         password: 'password123',
       })
       .send()
 
-    response.assertBody({
-      id: 1,
-      email: 'reach@yofou.dev',
-      username: 'yofou',
-      createdAt: '2024-06-09T22:17:46.193+00:00',
-      updatedAt: '2024-06-09T22:17:46.194+00:00',
-    })
+    response.assertBody(user.serialize())
 
     assert.exists(response.cookiesJar)
   })
 })
 
-test.group('Session, /register', () => {
+test.group('Session, /register', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
   test('fails if fields are not supplied', async ({ client }) => {
     const response = await client.post('/register').json({}).send()
 
@@ -176,13 +177,12 @@ test.group('Session, /register', () => {
       email: 'new@yofou.dev',
       username: 'yofou3',
     })
-  }).cleanup(async () => {
-    const user = await User.query().where('email', 'new@yofou.dev').first()
-    await user?.delete()
   })
 })
 
-test.group('Session, /me', () => {
+test.group('Session, /me', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
   test('fails if not logged in', async ({ client }) => {
     const response = await client.get('/me').send()
 
@@ -196,28 +196,22 @@ test.group('Session, /me', () => {
   })
 
   test('passed if logged in', async ({ client }) => {
-    const loginResponse = await client
-      .post('/login')
-      .json({ email: 'reach@yofou.dev', password: 'password123' })
-      .send()
-    const response = await client
-      .get('/me')
-      .withCookie('remember_web', '')
-      .withCookie('adonis-session', loginResponse.cookie('adonis-session')?.value)
-      .withCookie(loginResponse.cookie('adonis-session')?.value, { auth_web: 1 })
-      .send()
+    const user = await UserFactory.create()
+    const response = await client.get('/me').loginAs(user).send()
 
     response.assertBody({
-      createdAt: '2024-06-09T22:17:46.193+00:00',
-      email: 'reach@yofou.dev',
-      id: 1,
-      updatedAt: '2024-06-09T22:17:46.194+00:00',
-      username: 'yofou',
+      createdAt: user.serialize().createdAt,
+      email: user.email,
+      id: user.id,
+      updatedAt: user.serialize().updatedAt,
+      username: user.username,
     })
   })
 })
 
-test.group('Session, /logout', () => {
+test.group('Session, /logout', (group) => {
+  group.each.setup(() => testUtils.db().withGlobalTransaction())
+
   test('fails if not logged in', async ({ client }) => {
     const response = await client.delete('/logout').send()
 
@@ -231,16 +225,11 @@ test.group('Session, /logout', () => {
   })
 
   test('passed if logged in', async ({ client }) => {
-    const loginResponse = await client
-      .post('/login')
-      .json({ email: 'reach@yofou.dev', password: 'password123' })
-      .send()
-    const response = await client
-      .delete('/logout')
-      .withCookie('remember_web', '')
-      .withCookie('adonis-session', loginResponse.cookie('adonis-session')?.value)
-      .withCookie(loginResponse.cookie('adonis-session')?.value, { auth_web: 1 })
-      .send()
+    const user = await User.findByOrFail({
+      email: 'reach@yofou.dev',
+    })
+
+    const response = await client.delete('/logout').withGuard('web').loginAs(user).send()
 
     response.assertBody({ logout: true })
   })
