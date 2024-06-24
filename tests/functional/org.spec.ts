@@ -158,7 +158,7 @@ test.group('Org, CREATE /orgs', (group) => {
   })
 })
 
-test.group('Org, PUT /orgs', (group) => {
+test.group('Org, PUT /orgs/:id', (group) => {
   group.each.setup(() => testUtils.db().withGlobalTransaction())
 
   test('returns error if not logged in', async ({ client }) => {
