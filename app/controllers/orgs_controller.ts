@@ -1,3 +1,5 @@
+import InviteOrgUser from '#models/invite_org_user'
+import JoinedOrgUser from '#models/joined_org_user'
 import Org from '#models/org'
 import { createOrgValidator, readOrgValidator, updateOrgValidator } from '#validators/org'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -74,6 +76,52 @@ export default class OrgsController {
     }
 
     await org?.delete()
+
+    return { success: true }
+  }
+
+  async join(ctx: HttpContext) {
+    const { id } = await ctx.request.validateUsing(readOrgValidator)
+
+    const hasUserBeenInvited = await InviteOrgUser.findBy({
+      email: ctx.auth.user!.email,
+      orgId: id,
+    })
+
+    if (!hasUserBeenInvited) {
+      return ctx.response.unprocessableEntity({
+        errors: [
+          {
+            message: 'Unauthorized access',
+          },
+        ],
+      })
+    }
+
+    const joinedUser = await JoinedOrgUser.create({
+      orgId: id,
+      userId: ctx.auth.user!.id,
+    })
+
+    return joinedUser
+  }
+
+  async leave(ctx: HttpContext) {
+    const { id } = await ctx.request.validateUsing(readOrgValidator)
+    const hasUserJoined = await JoinedOrgUser.find({
+      orgId: id,
+      userId: ctx.auth.user!.id,
+    })
+
+    if (!hasUserJoined) {
+      return ctx.response.unprocessableEntity({
+        errors: [
+          {
+            message: 'Unauthorized access',
+          },
+        ],
+      })
+    }
 
     return { success: true }
   }

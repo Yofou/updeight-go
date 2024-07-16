@@ -91,10 +91,11 @@ test.group('Session, /register', (group) => {
   })
 
   test('fails if email is not unique', async ({ client }) => {
+    const makeUser = await UserFactory.create()
     const response = await client
       .post('/register')
       .json({
-        email: 'reach@yofou.dev',
+        email: makeUser.email,
         username: 'yofou',
         password: 'password123',
         confirm: 'password123',
@@ -225,8 +226,9 @@ test.group('Session, /logout', (group) => {
   })
 
   test('passed if logged in', async ({ client }) => {
+    const makeUser = await UserFactory.create()
     const user = await User.findByOrFail({
-      email: 'reach@yofou.dev',
+      email: makeUser.email,
     })
 
     const response = await client.delete('/logout').withGuard('web').loginAs(user).send()

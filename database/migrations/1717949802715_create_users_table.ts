@@ -7,6 +7,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id').notNullable()
       table.string('username').nullable()
+      // TODO: Look into indexing email
       table.string('email', 254).notNullable().unique()
       table.string('password').notNullable()
 
@@ -19,4 +20,3 @@ export default class extends BaseSchema {
     this.schema.dropTable(this.tableName)
   }
 }
-
